@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Player Statistics - Tic-Tac-Toe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link th:href="@{/css/toastr.css}" type="text/css" rel="stylesheet" />
+    <link th:href="@{/css/tictactoe.css}" type="text/css" rel="stylesheet" />
+    <style>
+      .stats-card {
+        width: 600px !important;
+        max-width: 90vw;
+      }
+
+      .stats-tabs {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+      }
+
+      .tab-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: linear-gradient(
+          135deg,
+          #00bcd4 0%,
+          #00acc1 50%,
+          #0097a7 100%
+        );
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 600;
+        font-size: 14px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 25px rgba(0, 188, 212, 0.4);
+        position: relative;
+        overflow: hidden;
+        min-width: 140px;
+        transform: translateZ(0);
+      }
+
+      .tab-button::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        transition: left 0.5s;
+      }
+
+      .tab-button:hover::before {
+        left: 100%;
+      }
+
+      .tab-button:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 15px 35px rgba(0, 188, 212, 0.6);
+        background: linear-gradient(
+          135deg,
+          #0097a7 0%,
+          #00bcd4 50%,
+          #00acc1 100%
+        );
+      }
+
+      .tab-button:active {
+        transform: translateY(-1px) scale(1.02);
+        box-shadow: 0 5px 15px rgba(0, 188, 212, 0.4);
+      }
+
+      .tab-button.active {
+        background: linear-gradient(
+          135deg,
+          #0097a7 0%,
+          #00bcd4 50%,
+          #00acc1 100%
+        );
+        box-shadow: 0 8px 20px rgba(0, 188, 212, 0.6);
+        border: none;
+        color: #ffffff;
+        transform: translateY(-2px) scale(1.02);
+      }
+
+      .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .stats-section h3 {
+        color: white;
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 18px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        font-weight: 600;
+      }
+
+      .player-list {
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 10px;
+      }
+
+      .player-list::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .player-list::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+
+      .player-list::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+        transition: background 0.3s ease;
+      }
+
+      .player-list::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+      }
+
+      .player-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        margin-bottom: 10px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 16px;
+        color: white;
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        animation: slideIn 0.5s ease forwards;
+        opacity: 0;
+        transform: translateX(-20px);
+        box-shadow: 0 4px 12px rgba(244, 143, 177, 0.15);
+      }
+
+      .player-item:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(244, 143, 177, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+      }
+
+      @keyframes slideIn {
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .player-rank {
+        font-weight: bold;
+        font-size: 18px;
+        color: #ffd700;
+        min-width: 35px;
+        text-align: center;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .player-rank.first {
+        color: #ffd700;
+      }
+      .player-rank.second {
+        color: #c0c0c0;
+      }
+      .player-rank.third {
+        color: #cd7f32;
+      }
+
+      .player-name {
+        font-weight: 600;
+        font-size: 16px;
+        flex: 1;
+        margin-left: 15px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      }
+
+      .player-stats {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .stat-item {
+        background: rgba(255, 255, 255, 0.25);
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.2s ease;
+      }
+
+      .stat-item:hover {
+        transform: scale(1.05);
+      }
+
+      .wins {
+        background: rgba(76, 175, 80, 0.7);
+        border-color: rgba(76, 175, 80, 0.9);
+      }
+      .losses {
+        background: rgba(244, 67, 54, 0.7);
+        border-color: rgba(244, 67, 54, 0.9);
+      }
+      .ties {
+        background: rgba(255, 193, 7, 0.7);
+        border-color: rgba(255, 193, 7, 0.9);
+      }
+      .winrate {
+        background: rgba(33, 150, 243, 0.7);
+        border-color: rgba(33, 150, 243, 0.9);
+      }
+      .total {
+        background: rgba(156, 39, 176, 0.7);
+        border-color: rgba(156, 39, 176, 0.9);
+      }
+
+      .refresh-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin: 30px auto 0;
+        padding: 16px 32px;
+        background: linear-gradient(
+          135deg,
+          #00bcd4 0%,
+          #00acc1 50%,
+          #0097a7 100%
+        );
+        color: white;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 25px rgba(0, 188, 212, 0.4);
+        position: relative;
+        overflow: hidden;
+        min-width: 200px;
+        transform: translateZ(0);
+        text-transform: uppercase;
+      }
+
+      .refresh-btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.4),
+          transparent
+        );
+        transition: left 0.6s ease;
+      }
+
+      .refresh-btn:hover::before {
+        left: 100%;
+      }
+
+      .refresh-btn:hover {
+        transform: translateY(-3px) scale(1.05);
+        background: linear-gradient(
+          135deg,
+          #0097a7 0%,
+          #00bcd4 50%,
+          #00acc1 100%
+        );
+        box-shadow: 0 15px 35px rgba(0, 188, 212, 0.6),
+          0 0 25px rgba(0, 188, 212, 0.4);
+      }
+
+      .refresh-btn:active {
+        transform: translateY(-1px) scale(1.02);
+        box-shadow: 0 5px 15px rgba(0, 188, 212, 0.4);
+      }
+
+      .loading,
+      .no-players {
+        text-align: center;
+        color: rgba(255, 255, 255, 0.7);
+        padding: 30px 20px;
+        font-style: italic;
+        font-size: 14px;
+      }
+
+      .error-message {
+        text-align: center;
+        color: rgba(244, 67, 54, 0.8);
+        padding: 20px;
+        font-style: italic;
+      }
+
+      .refreshing {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      .refreshing .refresh-btn {
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .stats-card {
+          width: 95vw !important;
+          padding: 20px;
+        }
+
+        .tab-button {
+          padding: 8px 16px;
+          font-size: 12px;
+          min-width: 100px;
+        }
+
+        .refresh-btn {
+          padding: 14px 28px;
+          font-size: 14px;
+          min-width: 160px;
+        }
+
+        .player-item {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
+
+        .player-stats {
+          justify-content: flex-start;
+          width: 100%;
+        }
+
+        .player-rank {
+          font-size: 16px;
+          min-width: 30px;
+        }
+
+        .player-name {
+          margin-left: 0;
+          font-size: 15px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .stats-tabs {
+          gap: 5px;
+        }
+
+        .tab-button {
+          padding: 6px 12px;
+          font-size: 11px;
+        }
+
+        .player-item {
+          padding: 12px;
+        }
+
+        .stat-item {
+          font-size: 11px;
+          padding: 3px 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-content">
+      <div class="card stats-card">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+          "
+        >
+          <h1 class="game-title">📊 Player Statistics</h1>
+          <a
+            href="/"
+            style="
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+              background: linear-gradient(
+                135deg,
+                #00bcd4 0%,
+                #00acc1 50%,
+                #0097a7 100%
+              );
+              color: white;
+              padding: 12px 20px;
+              border-radius: 25px;
+              text-decoration: none;
+              font-weight: 600;
+              font-size: 14px;
+              transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+              border: none;
+              backdrop-filter: blur(10px);
+              box-shadow: 0 8px 25px rgba(0, 188, 212, 0.4);
+              position: relative;
+              overflow: hidden;
+              min-width: 120px;
+              transform: translateZ(0);
+            "
+            onmouseover="this.style.background='linear-gradient(135deg, #0097a7 0%, #00bcd4 50%, #00acc1 100%)'; this.style.transform='translateY(-3px) scale(1.05)'; this.style.boxShadow='0 15px 35px rgba(0, 188, 212, 0.6)'"
+            onmouseout="this.style.background='linear-gradient(135deg, #00bcd4 0%, #00acc1 50%, #0097a7 100%)'; this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 25px rgba(0, 188, 212, 0.4)'"
+          >
+            🎮 Back to Game
+          </a>
+        </div>
+
+        <div class="stats-tabs">
+          <button class="tab-button active" onclick="showTab('wins')">
+            🏆 Top by Wins
+          </button>
+          <button class="tab-button" onclick="showTab('winrate')">
+            📈 Win Rate
+          </button>
+          <button class="tab-button" onclick="showTab('recent')">
+            ⚡ Recent
+          </button>
+        </div>
+
+        <div id="wins-tab" class="tab-content active">
+          <div class="stats-section">
+            <h3>🏆 Top Players by Wins</h3>
+            <div class="player-list" id="top-wins-list">
+              <div class="loading">Loading statistics...</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="winrate-tab" class="tab-content">
+          <div class="stats-section">
+            <h3>📈 Top Players by Win Rate</h3>
+            <div class="player-list" id="top-winrate-list">
+              <div class="loading">Loading statistics...</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="recent-tab" class="tab-content">
+          <div class="stats-section">
+            <h3>⚡ Recently Active Players</h3>
+            <div class="player-list" id="recent-players-list">
+              <div class="loading">Loading statistics...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-actions">
+          <button class="refresh-btn" onclick="refreshStats()">
+            🔄 Refresh Statistics
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script th:src="@{/js/lib/jquery-3.5.1.min.js}"></script>
+    <script th:src="@{/js/lib/toastr.js}"></script>
+    <script>
+      let isRefreshing = false;
+
+      // Function to show specific tab
+      function showTab(tabName) {
+        // Remove active class from all tabs and buttons
+        document.querySelectorAll(".tab-content").forEach((tab) => {
+          tab.classList.remove("active");
+        });
+        document.querySelectorAll(".tab-button").forEach((btn) => {
+          btn.classList.remove("active");
+        });
+
+        // Add active class to selected tab and button
+        document.getElementById(tabName + "-tab").classList.add("active");
+        event.target.classList.add("active");
+      }
+
+      // Function to format player item HTML
+      function formatPlayerItem(player, showRank = true, rank = 0) {
+        const winRate =
+          player.totalGames > 0
+            ? ((player.gamesWon / player.totalGames) * 100).toFixed(1)
+            : "0.0";
+
+        let rankDisplay = "";
+        let rankClass = "";
+
+        if (showRank) {
+          rankDisplay = `${rank}. `;
+          if (rank === 1) rankClass = "first";
+          else if (rank === 2) rankClass = "second";
+          else if (rank === 3) rankClass = "third";
+        }
+
+        return `
+          <div class="player-rank ${rankClass}">${rankDisplay}</div>
+          <div class="player-name">${player.username}</div>
+          <div class="player-stats">
+            <span class="stat-item wins">W: ${player.gamesWon}</span>
+            <span class="stat-item losses">L: ${player.gamesLost}</span>
+            <span class="stat-item ties">T: ${player.gamesTied}</span>
+            <span class="stat-item winrate">${winRate}%</span>
+            <span class="stat-item total">Total: ${player.totalGames}</span>
+          </div>
+        `;
+      }
+
+      // Load top players by wins
+      function loadTopWins() {
+        fetch("/api/players/top/wins")
+          .then((response) => {
+            if (!response.ok)
+              throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json();
+          })
+          .then((players) => {
+            const list = document.getElementById("top-wins-list");
+            if (players.length === 0) {
+              list.innerHTML =
+                '<div class="no-players">No players yet - start playing to see statistics!</div>';
+              return;
+            }
+
+            list.innerHTML = players
+              .slice(0, 10)
+              .map(
+                (player, index) =>
+                  `<div class="player-item" style="animation-delay: ${
+                    index * 0.1
+                  }s">${formatPlayerItem(player, true, index + 1)}</div>`
+              )
+              .join("");
+          })
+          .catch((error) => {
+            console.error("Error loading top wins:", error);
+            document.getElementById("top-wins-list").innerHTML =
+              '<div class="error-message">❌ Error loading data. Please try refreshing.</div>';
+          });
+      }
+
+      // Load top players by win rate
+      function loadTopWinRate() {
+        fetch("/api/players/top/winrate")
+          .then((response) => {
+            if (!response.ok)
+              throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json();
+          })
+          .then((players) => {
+            const list = document.getElementById("top-winrate-list");
+            if (players.length === 0) {
+              list.innerHTML =
+                '<div class="no-players">No players yet - start playing to see statistics!</div>';
+              return;
+            }
+
+            list.innerHTML = players
+              .slice(0, 10)
+              .map(
+                (player, index) =>
+                  `<div class="player-item" style="animation-delay: ${
+                    index * 0.1
+                  }s">${formatPlayerItem(player, true, index + 1)}</div>`
+              )
+              .join("");
+          })
+          .catch((error) => {
+            console.error("Error loading top win rate:", error);
+            document.getElementById("top-winrate-list").innerHTML =
+              '<div class="error-message">❌ Error loading data. Please try refreshing.</div>';
+          });
+      }
+
+      // Load recently active players
+      function loadRecentPlayers() {
+        fetch("/api/players/recent")
+          .then((response) => {
+            if (!response.ok)
+              throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json();
+          })
+          .then((players) => {
+            const list = document.getElementById("recent-players-list");
+            if (players.length === 0) {
+              list.innerHTML =
+                '<div class="no-players">No recent activity - start playing!</div>';
+              return;
+            }
+
+            list.innerHTML = players
+              .slice(0, 10)
+              .map(
+                (player, index) =>
+                  `<div class="player-item" style="animation-delay: ${
+                    index * 0.1
+                  }s">${formatPlayerItem(player, false)}</div>`
+              )
+              .join("");
+          })
+          .catch((error) => {
+            console.error("Error loading recent players:", error);
+            document.getElementById("recent-players-list").innerHTML =
+              '<div class="error-message">❌ Error loading data. Please try refreshing.</div>';
+          });
+      }
+
+      // Refresh all statistics
+      function refreshStats() {
+        if (isRefreshing) return;
+
+        isRefreshing = true;
+        document.body.classList.add("refreshing");
+
+        // Show loading state
+        document.querySelectorAll(".player-list").forEach((list) => {
+          list.innerHTML =
+            '<div class="loading">Refreshing statistics...</div>';
+        });
+
+        // Load all stats
+        Promise.all([
+          loadTopWins(),
+          loadTopWinRate(),
+          loadRecentPlayers(),
+        ]).finally(() => {
+          setTimeout(() => {
+            isRefreshing = false;
+            document.body.classList.remove("refreshing");
+            toastr.success("Statistics refreshed successfully!");
+          }, 500);
+        });
+      }
+
+      // Load stats when page loads
+      document.addEventListener("DOMContentLoaded", function () {
+        // Small delay to show loading animation
+        setTimeout(() => {
+          loadTopWins();
+          loadTopWinRate();
+          loadRecentPlayers();
+        }, 300);
+      });
+
+      // Auto-refresh every 30 seconds
+      setInterval(() => {
+        if (!isRefreshing) {
+          refreshStats();
+        }
+      }, 30000);
+    </script>
+  </body>
+</html>
