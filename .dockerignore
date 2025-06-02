@@ -1,0 +1,13 @@
+# Ignore unnecessary files
+.git
+.gitignore
+README.md
+.mvn
+mvnw
+mvnw.cmd
+src
+pom.xml
+*.md
+
+# Keep only necessary files for Docker build
+!target/tictactoewebsocket-0.0.1-SNAPSHOT.jar
